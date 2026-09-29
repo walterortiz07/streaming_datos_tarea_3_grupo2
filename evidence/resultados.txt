@@ -1,6 +1,6 @@
 ═══════════════════════════════════════════════════════════════
  Tarea 3 — Evidencia de ejecución
- Fecha: 2026-09-28T23:43:29Z
+ Fecha: 2026-09-29T23:04:39Z
 ═══════════════════════════════════════════════════════════════
 
 ── 1. Suite de pruebas ────────────────────────────────────────
@@ -17,7 +17,7 @@ tests/test_assignment.py::test_trigger_policy_has_lateness_and_accumulating_pane
 tests/test_assignment.py::test_retries_converge_to_one_materialized_entity PASSED [ 84%]
 tests/test_assignment.py::test_append_only_sink_materializes_every_attempt PASSED [ 92%]
 tests/test_assignment.py::test_timer_handler_clears_state PASSED         [100%]
-============================== 13 passed in 2.04s ==============================
+============================== 13 passed in 1.86s ==============================
 
 ── 2. Auditoría por evento (ventana 60 s, lateness 120 s) ─────
 event_id comercio   atraso   dup  tardio  acept   rev  razon
@@ -38,11 +38,10 @@ p-007    m-verde      169s False    True  False False  too_late
   m-azul   [2026-07-24T13:02:00+00:00 → 2026-07-24T13:03:00+00:00]  Gs. 200,000
 
 ── 4. Los tres escenarios del contrato ───────────────────────
-  por defecto (lateness 120)   aceptados= 5  totales=4  monto=Gs. 540,000
-  lateness 180 s               aceptados= 6  totales=4  monto=Gs. 570,000
-  sin deduplicar               aceptados= 6  totales=4  monto=Gs. 620,000
+  por defecto (lateness 120)   aceptados= 5  monto=Gs. 540,000
+  lateness 180 s               aceptados= 6  monto=Gs. 570,000
+  sin deduplicar               aceptados= 6  monto=Gs. 620,000
 
 ── 5. Idempotencia del sink ──────────────────────────────────
-  UPSERT (idempotente)     intentos=8  filas materializadas=4  operacion=UPSERT
-    clave de la primera fila: m-azul|2026-07-24T13:00:00+00:00
-  POST (append-only)       intentos=8  filas materializadas=8  operacion=POST
+  UPSERT (idempotente)     intentos=8  filas=4  operacion=UPSERT
+  POST (append-only)       intentos=8  filas=8  operacion=POST

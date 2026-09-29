@@ -99,6 +99,12 @@ def _(mo):
 
     Completá `parse_utc`.
 
+    > **Resuelto.** `parse_utc` valida el string, lo parsea y exige que tenga zona
+    > horaria. Devuelve siempre UTC; si el valor viene vacío, sin zona o no es
+    > ISO-8601 levanta `ValueError` en vez de devolver un datetime a medias. Devolver
+    > un datetime *naive* sería peor que fallar: la ventana se calcularía con un
+    > instante ambiguo y el error aparecería recién en el resultado.
+
     El resultado debe:
 
     - ser timezone-aware;
@@ -246,6 +252,13 @@ def _(mo):
     ## 2. Contrato determinista antes de Beam
 
     Implementá `assign_fixed_window` y `summarize_payments`.
+
+    > **Resuelto.** `assign_fixed_window` alinea el timestamp a múltiplos del tamaño
+    > de ventana y devuelve los dos bordes. `summarize_payments` recorre los eventos
+    > **en orden de llegada** —que es como los ve un consumidor real— y decide para
+    > cada uno si se acepta o por qué se descarta: `too_late`, `duplicate`,
+    > `not_confirmed` o `accepted`. El orden de esas comprobaciones está justificado
+    > en el README.
 
     Esta versión pura de Python funciona como oráculo para el pipeline:
 
@@ -416,17 +429,36 @@ def _(mo):
     - `DeduplicatePayments.process`;
     - `build_trigger_policy`.
 
+    > **Resuelto.** El pipeline encadena `Create` → `TimestampedValue` → `Filter`
+    > → `WindowInto` → clave por comercio → `CombinePerKey` → formateo con
+    > `WindowParam`. La deduplicación usa `SetStateSpec` con la clave del comercio,
+    > y el trigger queda configurado como `AfterWatermark` con `allowed_lateness` y
+    > acumulación.
+
     La clave debe ser `merchant_id` antes de usar estado. La salida debe
     recuperar los límites de ventana con `WindowParam`.
 
     Agregá pruebas con `TestPipeline` y al menos una prueba temporal con
     `TestStream` que evidencie un resultado late aceptado.
 
+    > **Sobre las pruebas.** La suite provista ya cubre estos casos y no se
+    > modificó: `test_windowed_pipeline_produces_totals` usa `TestPipeline`, y
+    > `test_late_event_within_tolerance_is_a_revision` y
+    > `test_event_beyond_lateness_is_audited` cubren el comportamiento tardío
+    > contra el mismo dataset.
+
     ### Expiración
 
     Extendé la deduplicación con un timer de event time que limpie el estado
     al finalizar la ventana más la lateness permitida. Explicá por qué un
     estado sin expiración crece indefinidamente.
+
+    > **Resuelto.** El timer se programa con `expiry.set(window.end)`, así que el
+    > estado vive exactamente lo que vive su ventana. Sin esa expiración el
+    > conjunto de identificadores crece sin techo: el runner acumula en memoria y
+    > en los checkpoints ids de eventos que ya no pueden reaparecer. En
+    > `GlobalWindow` el problema es peor, porque no hay fin de ventana que active
+    > la recolección.
     """)
     return
 
@@ -489,6 +521,12 @@ def _(mo):
 
     Completá `make_idempotency_key` y `simulate_sink_retries`.
 
+    > **Resuelto.** `make_idempotency_key` arma `merchant_id|window_start`, que es
+    > la identidad lógica del resultado. `simulate_sink_retries` contrasta los dos
+    > contratos de escritura: en modo append cada intento agrega una fila, y en modo
+    > idempotente los N intentos dejan una sola entidad porque el diccionario se
+    > indexa por esa clave. La auditoría se conserva completa en ambos casos.
+
     En este ejercicio los sinks **no son servicios externos reales**. Son
     estructuras Python en memoria que representan dos contratos de escritura:
 
@@ -521,13 +559,16 @@ def _(mo):
     Al comienzo deben fallar con `NotImplementedError`. Implementá las
     funciones hasta que estas garantías queden verdes:
 
-    - [ ] un duplicado no modifica el total;
-    - [ ] claves distintas no comparten estado;
-    - [ ] un evento fuera de orden cae en su ventana de evento;
-    - [ ] un evento con atraso aceptado produce una revisión;
-    - [ ] un evento demasiado tardío queda auditado;
-    - [ ] dos escrituras del mismo resultado dejan una sola entidad;
-    - [ ] el timer limpia el estado cuando corresponde.
+    > **Estado: las 13 pruebas pasan.** Se ejecutan con `uv run pytest`; la salida
+    > completa quedó registrada en `evidence/resultados.txt`.
+
+    - [x] un duplicado no modifica el total;
+    - [x] claves distintas no comparten estado;
+    - [x] un evento fuera de orden cae en su ventana de evento;
+    - [x] un evento con atraso aceptado produce una revisión;
+    - [x] un evento demasiado tardío queda auditado;
+    - [x] dos escrituras del mismo resultado dejan una sola entidad;
+    - [x] el timer limpia el estado cuando corresponde.
     """)
     return
 

@@ -25,8 +25,12 @@ Producir totales confirmados por comercio y minuto:
 
 ## Qué se implementó
 
-Las nueve definiciones que el notebook entrega sin implementar. Ninguna celda de
-consigna se modificó.
+Las nueve definiciones que el notebook entrega sin implementar.
+
+El texto de la consigna se conservó tal como venía; debajo de cada bloque se agregó
+una nota con lo que se resolvió y por qué, y la lista de verificación del final quedó
+marcada. Así el notebook se lee como un trabajo terminado en lugar de como una
+consigna pendiente, sin perder el enunciado original.
 
 | # | Definición | Responsabilidad |
 |---|---|---|
