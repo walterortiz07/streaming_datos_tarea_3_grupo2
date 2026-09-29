@@ -1,0 +1,48 @@
+═══════════════════════════════════════════════════════════════
+ Tarea 3 — Evidencia de ejecución
+ Fecha: 2026-09-28T23:43:29Z
+═══════════════════════════════════════════════════════════════
+
+── 1. Suite de pruebas ────────────────────────────────────────
+tests/test_assignment.py::test_parse_utc_returns_timezone_aware_datetime PASSED [  7%]
+tests/test_assignment.py::test_assign_fixed_window_uses_event_time PASSED [ 15%]
+tests/test_assignment.py::test_duplicate_does_not_change_total PASSED    [ 23%]
+tests/test_assignment.py::test_deduplication_is_isolated_by_merchant PASSED [ 30%]
+tests/test_assignment.py::test_stateful_dofn_keeps_keys_isolated PASSED  [ 38%]
+tests/test_assignment.py::test_out_of_order_event_uses_its_event_time_window PASSED [ 46%]
+tests/test_assignment.py::test_late_event_within_tolerance_is_a_revision PASSED [ 53%]
+tests/test_assignment.py::test_event_beyond_lateness_is_audited PASSED   [ 61%]
+tests/test_assignment.py::test_windowed_pipeline_produces_totals PASSED  [ 69%]
+tests/test_assignment.py::test_trigger_policy_has_lateness_and_accumulating_panes PASSED [ 76%]
+tests/test_assignment.py::test_retries_converge_to_one_materialized_entity PASSED [ 84%]
+tests/test_assignment.py::test_append_only_sink_materializes_every_attempt PASSED [ 92%]
+tests/test_assignment.py::test_timer_handler_clears_state PASSED         [100%]
+============================== 13 passed in 2.04s ==============================
+
+── 2. Auditoría por evento (ventana 60 s, lateness 120 s) ─────
+event_id comercio   atraso   dup  tardio  acept   rev  razon
+p-001    m-azul         1s False   False   True False  accepted
+p-002    m-verde        2s False   False   True False  accepted
+p-003    m-azul         2s False   False  False False  not_confirmed
+p-004    m-azul        53s False   False   True  True  accepted
+p-002    m-verde       83s  True   False  False False  duplicate
+p-005    m-verde        2s False   False   True False  accepted
+p-006    m-azul         1s False   False   True False  accepted
+p-008    m-azul         3s False   False  False False  not_confirmed
+p-007    m-verde      169s False    True  False False  too_late
+
+── 3. Totales por comercio y ventana ─────────────────────────
+  m-azul   [2026-07-24T13:00:00+00:00 → 2026-07-24T13:01:00+00:00]  Gs. 170,000
+  m-verde  [2026-07-24T13:00:00+00:00 → 2026-07-24T13:01:00+00:00]  Gs. 80,000
+  m-verde  [2026-07-24T13:01:00+00:00 → 2026-07-24T13:02:00+00:00]  Gs. 90,000
+  m-azul   [2026-07-24T13:02:00+00:00 → 2026-07-24T13:03:00+00:00]  Gs. 200,000
+
+── 4. Los tres escenarios del contrato ───────────────────────
+  por defecto (lateness 120)   aceptados= 5  totales=4  monto=Gs. 540,000
+  lateness 180 s               aceptados= 6  totales=4  monto=Gs. 570,000
+  sin deduplicar               aceptados= 6  totales=4  monto=Gs. 620,000
+
+── 5. Idempotencia del sink ──────────────────────────────────
+  UPSERT (idempotente)     intentos=8  filas materializadas=4  operacion=UPSERT
+    clave de la primera fila: m-azul|2026-07-24T13:00:00+00:00
+  POST (append-only)       intentos=8  filas materializadas=8  operacion=POST
